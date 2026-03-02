@@ -1,0 +1,736 @@
+{
+  "configType": "quiz",
+  "version": "1",
+  "id": "connected to the id within the database",
+  "instructions": "any specific instructions for the quiz",
+  "duration": "time allowed (in seconds) before autosubmission",
+  "endDate": "date-time when the quiz closes",
+  "navigationType": "ONE_WAY | FREE",
+  "attemptsAllowed": "number of attempts allowed for the quiz",
+  "reviewAllowed": "true if the quiz can be reviewed after submission",
+  "questions": [
+    {
+      "questionId": "id of a QuestionConfig",
+      "order": "display order of the question in the quiz"
+    }
+  ]
+}
+
+{
+  "configType": "question",
+  "version": "1",
+  "id": "connected to the id within the database",
+  "generator": {
+    "generatorConfigId": "id of generator config (e.g., gen_dag_graph)",
+    "inputs": {
+      "nodes": "number of nodes",
+      "edges": "number of edges"
+    },
+    "outputs": {
+      "instance": "name of the produced instance output"
+    }
+  },
+  "solvers": [
+    {
+      "solverConfigId": "id of solver config",
+      "inputs": {
+        "instance": "name of input instance",
+        "previous": "name of previous solver output (optional)"
+      },
+      "outputs": {
+        "solution": "name of produced solution output"
+      }
+    }
+  ],
+  "grader": {
+    "graderConfigId": "id of grader config",
+    "inputs": {
+      "solution": "name of solver output to grade",
+      "answer": "name of student solution output to grade"
+    },
+    "outputs": {
+      "grade": "name of produced grade output"
+    }
+  }
+}
+
+{
+  "configType": "generator",
+  "version": "1",
+  "type": "graph",
+  "data": {
+    "id": "connected to the id within the database",
+    "directed": "true if the graph is directed",
+    "weighted": "true if the graph is weighted",
+    "cyclic": "true if the graph is cyclic",
+    "connected": "true if the graph is undirected and connected or if the graph is directed and strongly connected"
+  }
+}
+
+{
+  "configType": "generator",
+  "version": "1",
+  "type": "function",
+  "data": {
+    "id": "connected to the id within the database",
+    "family": "this is the family from above",
+    "nID": "id of another function generator config used as n (optional)",
+    "allowedParameters": {
+      "c": "true if constant is allowed",
+      "b": "true if logarithmic base is allowed",
+      "e": "true if logarithmic power is allowed",
+      "p": "true if polynomial/root power or denominator is allowed",
+      "num": "true if root numerator is allowed",
+      "a": "true if exponential base is allowed",
+      "k": "true if factorial coefficient is allowed"
+    }
+  }
+}
+
+{
+  "configType": "generator",
+  "version": "1",
+  "type": "recurrence",
+  "data": {
+    "id": "connected to the id within the database",
+    "form": "the form of the recurrence ex-> aT(n/b) + f(n)",
+    "functionGeneratorConfigId": "id of the function generator config used to generate f(n)"
+  }
+}
+
+{
+  "configType": "generator",
+  "version": "1",
+  "type": "loop",
+  "data": {
+    "id": "connected to the id within the database",
+    "allowedVariables": ["variable name", "variable name"],
+    "allowedSteps": ["+=1", "*=2"],
+    "allowedDependencies": ["INDEPENDENT", "DEPENDENT_PARENT", "DEPENDENT_PREVIOUS"],
+    "allowedChildNodeTypes": ["LOOP", "FUNCTION", "OPERATION"],
+    "structureRules": {
+      "allowAdjacentLoops": "true if multiple top-level loops are allowed",
+      "allowNestedLoops": "true if loops can be nested",
+      "maxDepthLimit": "global safety cap on nesting depth",
+      "maxSiblingsLimit": "global safety cap on siblings per level"
+    },
+    "boundsPolicy": {
+      "allowedStartForms": ["0", "1", "c"],
+      "allowedEndForms": ["n", "n^2", "logn", "c"],
+      "allowSymbolicN": "true if symbolic bounds are allowed"
+    }
+  }
+}
+
+{
+  "configType": "solver",
+  "version": "1",
+  "type": "graph",
+  "data": {
+    "id": "connected to the solver id within the database",
+    "mode": "builtin or instructor",
+    "strategy": "bfs | dfs | dijkstra | mst | topoSort | custom",
+    "code": "optional instructor code"
+  }
+}
+
+
+{
+  "configType": "solver",
+  "version": "1",
+  "type": "analysis",
+  "data": {
+    "id": "connected to the solver id within the database",
+    "mode": "builtin or instructor",
+    "strategy": "bigO | bigTheta | bigOmega | simplifyExpression | custom",
+    "code": "optional instructor code"
+  }
+}
+
+
+{
+  "configType": "solver",
+  "version": "1",
+  "type": "recurrence",
+  "data": {
+    "id": "connected to the solver id within the database",
+    "mode": "builtin or instructor",
+    "strategy": "masterMethod | recursionTree | custom",
+    "code": "optional instructor code"
+  }
+}
+
+
+{
+  "configType": "solver",
+  "version": "1",
+  "type": "loop",
+  "data": {
+    "id": "connected to the solver id within the database",
+    "mode": "builtin or instructor",
+    "strategy": "countIterations | dependentLoops | simplifyExpression | custom",
+    "code": "optional instructor code"
+  }
+}
+
+
+{
+  "configType": "grader",
+  "version": "1",
+  "type": "graph",
+  "data": {
+    "id": "connected to the grader id within the database",
+    "answerKind": "adjacencyList | nodeList | edgeList | number | string",
+    "check": "isConnected | isValidTraversal | isShortestPath | equalsExpected",
+    "code": "optional instructor code"
+  }
+}
+
+
+{
+  "configType": "grader",
+  "version": "1",
+  "type": "analysis",
+  "data": {
+    "id": "connected to the grader id within the database",
+    "answerKind": "bigO | bigTheta | expression | string",
+    "check": "equivalent | equalsExpected | patternMatch",
+    "code": "optional instructor code"
+  }
+}
+
+
+{
+  "configType": "grader",
+  "version": "1",
+  "type": "recurrence",
+  "data": {
+    "id": "connected to the grader id within the database",
+    "answerKind": "bigTheta | expression | string",
+    "check": "equivalent | equalsExpected | patternMatch",
+    "code": "optional instructor code"
+  }
+}
+
+
+{
+  "configType": "grader",
+  "version": "1",
+  "type": "loop",
+  "data": {
+    "id": "connected to the grader id within the database",
+    "answerKind": "bigO | expression | number | string",
+    "check": "equivalent | equalsExpected | patternMatch",
+    "code": "optional instructor code"
+  }
+}
+
+
+{
+  "instanceType": "graph",
+  "data": {
+    "id": "connected to the id within the database",
+    "nodes": "number of nodes",
+    "edges": "number of edges",
+    "directed": "true if the graph is directed",
+    "weighted": "true if the graph is weighted",
+    "cyclic": "true if the graph is cyclic",
+    "connected": "true if the graph is undirected and connected or if the graph is directed and strongly connected",
+    "adjacencyList": "the adjacency list for the generated graph"
+  }
+}
+
+
+{
+  "instanceType": "function",
+  "data": {
+    "id": "connected to the id within the database",
+    "family": "this is the family from above",
+    "nID": "id of another function instance used as n (optional)",
+    "parameters": {
+      "c": "a constant",
+      "b": "the base of a logarithm",
+      "e": "the power of a logarithm",
+      "p": "the power of a polynomial or the denominator for a root",
+      "num": "the numerator of a polynomial",
+      "a": "the base of an exponential",
+      "k": "coefficient of a function that is factorial"
+    }
+  }
+}
+
+
+{
+  "instanceType": "recurrence",
+  "data": {
+    "id": "connected to the id within the database",
+    "form": "the form of the recurrence ex-> aT(n/b) + f(n)",
+    "a": "chosen value for a",
+    "b": "chosen value for b",
+    "functionInstance": "the generated function instance used as f(n)"
+  }
+}
+
+
+{
+  "instanceType": "loop",
+  "data": {
+    "id": "connected to the id within the database",
+    "maxDepth": "maximum depth of tree",
+    "maxSiblingsPerLevel": "maximum number of siblings per level",
+    "nodes": [
+      {
+        "nodeId": "unique id",
+        "nodeType": "LOOP | FUNCTION | OPERATION",
+        "loop": {
+          "variable": "variable in the header of the loop",
+          "bounds": {
+            "start": "the initial value of the variable",
+            "end": "the maximum value of the variable",
+            "step": "the way the variable changes each time (+=1 or *=2)"
+          },
+          "dependency": "dependency enum value"
+        },
+        "function": {
+          "functionId": "reference to a FunctionInstance"
+        },
+        "operation": {
+          "op": "primitive operation (e.g., sum += i)"
+        },
+        "children": ["childNodeId1", "childNodeId2"]
+      }
+    ],
+    "root": "nodeId of root, or root if multiple adjacent top-level nodes"
+  }
+}
+
+
+{
+  "solutionType": "graph",
+  "data": {
+    "id": "connected to the id within the database",
+    "result": {
+      "kind": "path | traversal | adjacencyList | edgeList | distanceMap | number",
+      "value": "graph solution content based on kind"
+    }
+  }
+}
+
+
+{
+  "solutionType": "analysis",
+  "data": {
+    "id": "connected to the id within the database",
+    "result": {
+      "kind": "bigO | bigTheta | bigOmega | expression | string",
+      "value": "asymptotic notation or simplified expression"
+    }
+  }
+}
+
+
+{
+  "solutionType": "recurrence",
+  "data": {
+    "id": "connected to the id within the database",
+    "result": {
+      "kind": "bigTheta | expression",
+      "value": "solved recurrence result"
+    }
+  }
+}
+
+
+{
+  "solutionType": "loop",
+  "data": {
+    "id": "connected to the id within the database",
+    "result": {
+      "kind": "bigO | exactCount | expression | number",
+      "value": "loop execution result"
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+{
+  "configType": "quiz",
+  "version": "1",
+  "id": "quiz_graph_01",
+  "instructions": "Answer all questions related to graph traversal and shortest paths.",
+  "duration": "3600",
+  "endDate": "2026-01-15T23:59:59",
+  "navigationType": "FREE",
+  "attemptsAllowed": "1",
+  "reviewAllowed": "true",
+  "questions": [
+    {
+      "questionId": "question_graph_01",
+      "order": "1"
+    }
+  ]
+}
+
+{
+  "configType": "question",
+  "version": "1",
+  "id": "question_graph_01",
+  "generator": {
+    "generatorConfigId": "gen_graph_basic",
+    "inputs": {
+      "nodes": "4",
+      "edges": "4"
+    },
+    "outputs": {
+      "instance": "graph_instance_01"
+    }
+  },
+  "solvers": [
+    {
+      "solverConfigId": "solver_graph_bfs",
+      "inputs": {
+        "instance": "graph_instance_01"
+      },
+      "outputs": {
+        "solution": "graph_solution_expected"
+      }
+    }
+  ],
+  "grader": {
+    "graderConfigId": "grader_graph_traversal",
+    "inputs": {
+      "solution": "graph_solution_expected",
+      "answer": "graph_solution_student"
+    },
+    "outputs": {
+      "grade": "grade_graph_01"
+    }
+  }
+}
+
+{
+  "configType": "generator",
+  "version": "1",
+  "type": "graph",
+  "data": {
+    "id": "gen_graph_basic",
+    "directed": "false",
+    "weighted": "false",
+    "cyclic": "true",
+    "connected": "true"
+  }
+}
+
+{
+  "configType": "solver",
+  "version": "1",
+  "type": "graph",
+  "data": {
+    "id": "solver_graph_bfs",
+    "mode": "builtin",
+    "strategy": "bfs",
+    "parameters": "startNode=A"
+  }
+}
+
+{
+  "configType": "grader",
+  "version": "1",
+  "type": "graph",
+  "data": {
+    "id": "grader_graph_traversal",
+    "answerKind": "nodeList",
+    "check": "isValidTraversal",
+    "parameters": "allowAnyValid=true"
+  }
+}
+
+{
+  "instanceType": "graph",
+  "data": {
+    "id": "graph_instance_01",
+    "nodes": "4",
+    "edges": "4",
+    "directed": "false",
+    "weighted": "false",
+    "cyclic": "true",
+    "connected": "true",
+    "adjacencyList": {
+      "A": ["B", "C"],
+      "B": ["A", "D"],
+      "C": ["A"],
+      "D": ["B"]
+    }
+  }
+}
+
+{
+  "solutionType": "graph",
+  "data": {
+    "id": "graph_solution_expected",
+    "result": {
+      "kind": "traversal",
+      "value": ["A", "B", "C", "D"]
+    }
+  }
+}
+
+{
+  "solutionType": "graph",
+  "data": {
+    "id": "graph_solution_student",
+    "result": {
+      "kind": "traversal",
+      "value": ["A", "C", "B", "D"]
+    }
+  }
+}
+
+{
+  "solutionType": "analysis",
+  "data": {
+    "id": "analysis_solution_01",
+    "result": {
+      "kind": "bigTheta",
+      "value": "Θ(n^2)"
+    }
+  }
+}
+
+{
+  "solutionType": "recurrence",
+  "data": {
+    "id": "recurrence_solution_01",
+    "result": {
+      "kind": "theta",
+      "value": "Θ(n log n)"
+    }
+  }
+}
+
+{
+  "solutionType": "loop",
+  "data": {
+    "id": "loop_solution_01",
+    "result": {
+      "kind": "exactCount",
+      "value": "n(n - 1) / 2"
+    }
+  }
+}
+
+
+{
+  "configType": "generator",
+  "version": "1",
+  "type": "function",
+  "data": {
+    "id": "gen_function_polylog",
+    "family": "polylog",
+    "nID": "function_instance_n_01",
+    "allowedParameters": {
+      "c": "true",
+      "b": "true",
+      "e": "true",
+      "p": "true",
+      "num": "false",
+      "a": "false",
+      "k": "false"
+    }
+  }
+}
+
+{
+  "configType": "generator",
+  "version": "1",
+  "type": "recurrence",
+  "data": {
+    "id": "gen_recurrence_master_01",
+    "form": "aT(n/b) + f(n)",
+    "functionGeneratorConfigId": "gen_function_polylog"
+  }
+}
+
+{
+  "configType": "generator",
+  "version": "1",
+  "type": "loop",
+  "data": {
+    "id": "gen_loop_basic_01",
+    "allowedVariables": ["i", "j", "k"],
+    "allowedSteps": ["+=1", "*=2"],
+    "allowedDependencies": ["INDEPENDENT", "DEPENDENT_PARENT", "DEPENDENT_PREVIOUS"],
+    "allowedChildNodeTypes": ["LOOP", "FUNCTION", "OPERATION"],
+    "structureRules": {
+      "allowAdjacentLoops": "true",
+      "allowNestedLoops": "true",
+      "maxDepthLimit": "3",
+      "maxSiblingsLimit": "3"
+    },
+    "boundsPolicy": {
+      "allowedStartForms": ["0", "1", "c"],
+      "allowedEndForms": ["n", "n^2", "logn", "c"],
+      "allowSymbolicN": "true"
+    }
+  }
+}
+
+{
+  "configType": "solver",
+  "version": "1",
+  "type": "analysis",
+  "data": {
+    "id": "solver_analysis_bigtheta",
+    "mode": "builtin",
+    "strategy": "bigTheta",
+    "parameters": "target=expression"
+  }
+}
+
+{
+  "configType": "solver",
+  "version": "1",
+  "type": "recurrence",
+  "data": {
+    "id": "solver_recurrence_master",
+    "mode": "builtin",
+    "strategy": "masterMethod",
+    "parameters": "solveForm=aT(n/b)+f(n)"
+  }
+}
+
+{
+  "configType": "solver",
+  "version": "1",
+  "type": "loop",
+  "data": {
+    "id": "solver_loop_count",
+    "mode": "builtin",
+    "strategy": "countIterations",
+    "parameters": "returnKind=exactCount"
+  }
+}
+
+{
+  "configType": "grader",
+  "version": "1",
+  "type": "analysis",
+  "data": {
+    "id": "grader_analysis_equivalence",
+    "answerKind": "expression",
+    "check": "equivalent",
+    "parameters": "normalizeWhitespace=true"
+  }
+}
+
+{
+  "configType": "grader",
+  "version": "1",
+  "type": "recurrence",
+  "data": {
+    "id": "grader_recurrence_equivalence",
+    "answerKind": "expression",
+    "check": "equivalent",
+    "parameters": "allowThetaEquivalent=true"
+  }
+}
+
+{
+  "configType": "grader",
+  "version": "1",
+  "type": "loop",
+  "data": {
+    "id": "grader_loop_expression",
+    "answerKind": "expression",
+    "check": "equivalent",
+    "parameters": "simplifyExpression=true"
+  }
+}
+
+{
+  "instanceType": "function",
+  "data": {
+    "id": "function_instance_n_01",
+    "family": "polylog",
+    "nID": "none",
+    "parameters": {
+      "c": "3",
+      "b": "2",
+      "e": "1",
+      "p": "2",
+      "num": "none",
+      "a": "none",
+      "k": "none"
+    }
+  }
+}
+
+{
+  "instanceType": "recurrence",
+  "data": {
+    "id": "recurrence_instance_01",
+    "form": "aT(n/b) + f(n)",
+    "a": "2",
+    "b": "2",
+    "functionInstance": "function_instance_n_01"
+  }
+}
+
+{
+  "instanceType": "loop",
+  "data": {
+    "id": "loop_instance_01",
+    "maxDepth": "2",
+    "maxSiblingsPerLevel": "2",
+    "nodes": [
+      {
+        "nodeId": "n1",
+        "nodeType": "LOOP",
+        "loop": {
+          "variable": "i",
+          "bounds": {
+            "start": "0",
+            "end": "n",
+            "step": "+=1"
+          },
+          "dependency": "INDEPENDENT"
+        },
+        "function": {
+          "functionId": "none"
+        },
+        "operation": {
+          "op": "none"
+        },
+        "children": ["n2"]
+      },
+      {
+        "nodeId": "n2",
+        "nodeType": "OPERATION",
+        "loop": {
+          "variable": "none",
+          "bounds": {
+            "start": "none",
+            "end": "none",
+            "step": "none"
+          },
+          "dependency": "none"
+        },
+        "function": {
+          "functionId": "none"
+        },
+        "operation": {
+          "op": "sum += i"
+        },
+        "children": []
+      }
+    ],
+    "root": "n1"
+  }
+}
