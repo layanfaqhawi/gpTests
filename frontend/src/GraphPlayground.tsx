@@ -1,8 +1,11 @@
+import axios from "axios";
 import * as d3 from "d3";
 import { motion } from "framer-motion";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-type AdjacencyList = Record<string, string[]>;
+type WeightedNeighbors = Record<string, number>;
+type AdjacencyValue = string[] | WeightedNeighbors;
+type AdjacencyList = Record<string, AdjacencyValue>;
 
 type NodeDatum = {
   id: string;
@@ -18,6 +21,7 @@ type NodeDatum = {
 type LinkDatum = {
   source: string | NodeDatum;
   target: string | NodeDatum;
+  weight?: number;
 };
 
 const DEFAULT_INPUT = `{
@@ -26,6 +30,10 @@ const DEFAULT_INPUT = `{
   "C": ["A"],
   "D": ["B"]
 }`;
+
+const api = axios.create({
+  baseURL: "http://localhost:3000",
+});
 
 function safeParseAdjacency(
   text: string,
@@ -36,11 +44,32 @@ function safeParseAdjacency(
       return { ok: false, error: 'Expected an object like { "A": ["B","C"] }' };
     }
     for (const [k, v] of Object.entries(parsed)) {
-      if (!Array.isArray(v) || v.some((x) => typeof x !== "string")) {
+      if (Array.isArray(v)) {
+        if (v.some((x) => typeof x !== "string")) {
+          return {
+            ok: false,
+            error: `Value for "${k}" must be an array of strings.`,
+          };
+        }
+        continue;
+      }
+
+      if (!v || typeof v !== "object") {
         return {
           ok: false,
-          error: `Value for "${k}" must be an array of strings.`,
+          error:
+            `Value for "${k}" must be either an array of neighbors ` +
+            `or an object of neighbor weights.`,
         };
+      }
+
+      for (const [neighbor, weight] of Object.entries(v)) {
+        if (typeof neighbor !== "string" || typeof weight !== "number") {
+          return {
+            ok: false,
+            error: `Weighted value for "${k}" must look like { "B": 3 }.`,
+          };
+        }
       }
     }
     return { ok: true, value: parsed as AdjacencyList };
@@ -49,44 +78,58 @@ function safeParseAdjacency(
   }
 }
 
-// Undirected, de-duplicate edges
-function adjacencyToGraph(adj: AdjacencyList): {
+function adjacencyToGraphWithDirection(
+  adj: AdjacencyList,
+  directed: boolean,
+): {
   nodes: NodeDatum[];
   links: LinkDatum[];
 } {
   const nodeSet = new Set<string>();
-  const edgeSet = new Set<string>();
+  const linkMap = new Map<string, LinkDatum>();
 
-  for (const [u, neighbors] of Object.entries(adj)) {
+  for (const [u, value] of Object.entries(adj)) {
     nodeSet.add(u);
-    for (const v of neighbors) {
+    const neighbors = Array.isArray(value)
+      ? value.map((target) => ({
+          target,
+          weight: undefined as number | undefined,
+        }))
+      : Object.entries(value).map(([target, weight]) => ({ target, weight }));
+
+    for (const { target: v, weight } of neighbors) {
       nodeSet.add(v);
-      const a = u < v ? u : v;
-      const b = u < v ? v : u;
-      edgeSet.add(`${a}--${b}`);
+      const key = directed ? `${u}->${v}` : u < v ? `${u}--${v}` : `${v}--${u}`;
+      if (!linkMap.has(key)) {
+        linkMap.set(key, { source: u, target: v, weight });
+      }
     }
   }
 
   const nodes = Array.from(nodeSet)
     .sort()
     .map((id) => ({ id, locked: false }));
-  const links = Array.from(edgeSet).map((k) => {
-    const [source, target] = k.split("--");
-    return { source, target };
-  });
+  const links = Array.from(linkMap.values());
 
   return { nodes, links };
 }
 
 export default function GraphPlayground() {
+  const [directed, setDirected] = useState(false);
+  const [weighted, setWeighted] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const [cyclic, setCyclic] = useState(false);
+  const [nodes, setNodes] = useState(5);
+  const [edges, setEdges] = useState(7);
+
   const [text, setText] = useState(DEFAULT_INPUT);
   const parsed = useMemo(() => safeParseAdjacency(text), [text]);
 
   const graph = useMemo(() => {
     if (!parsed.ok)
       return { nodes: [] as NodeDatum[], links: [] as LinkDatum[] };
-    return adjacencyToGraph(parsed.value);
-  }, [parsed]);
+    return adjacencyToGraphWithDirection(parsed.value, directed);
+  }, [parsed, directed]);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   const simRef = useRef<d3.Simulation<NodeDatum, undefined> | null>(null);
@@ -105,7 +148,22 @@ export default function GraphPlayground() {
     if (!graph.nodes.length) return;
 
     // Create groups
+    const defs = svg.append("defs");
+    defs
+      .append("marker")
+      .attr("id", "arrowhead")
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", nodeRadius + 10)
+      .attr("refY", 0)
+      .attr("markerWidth", 8)
+      .attr("markerHeight", 8)
+      .attr("orient", "auto")
+      .append("path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .attr("fill", "rgba(255,255,255,0.45)");
+
     const gLinks = svg.append("g").attr("class", "links").attr("opacity", 0.85);
+    const gWeights = svg.append("g").attr("class", "weights");
     const gNodes = svg.append("g").attr("class", "nodes");
     const gLabels = svg.append("g").attr("class", "labels");
 
@@ -119,7 +177,24 @@ export default function GraphPlayground() {
       .data(links)
       .join("line")
       .attr("stroke", "rgba(255,255,255,0.25)")
-      .attr("stroke-width", 2);
+      .attr("stroke-width", 2)
+      .attr("marker-end", directed ? "url(#arrowhead)" : null);
+
+    const weightedLinks = weighted
+      ? links.filter((l) => typeof l.weight === "number")
+      : [];
+
+    const weightSel = gWeights
+      .selectAll("text")
+      .data(weightedLinks)
+      .join("text")
+      .text((d) => String(d.weight))
+      .attr("fill", "#f8fafc")
+      .attr("font-size", 11)
+      .attr("font-weight", 700)
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "central")
+      .style("pointer-events", "none");
 
     // Create node elements
     const nodeSel = gNodes
@@ -212,6 +287,22 @@ export default function GraphPlayground() {
       labelSel
         .attr("x", (d) => d.x ?? width / 2)
         .attr("y", (d) => d.y ?? height / 2);
+
+      weightSel
+        .attr(
+          "x",
+          (d: any) =>
+            (((d.source as NodeDatum).x ?? width / 2) +
+              ((d.target as NodeDatum).x ?? width / 2)) /
+            2,
+        )
+        .attr(
+          "y",
+          (d: any) =>
+            (((d.source as NodeDatum).y ?? height / 2) +
+              ((d.target as NodeDatum).y ?? height / 2)) /
+            2,
+        );
     });
 
     simulation.alpha(1).restart();
@@ -219,7 +310,7 @@ export default function GraphPlayground() {
     return () => {
       simulation.stop();
     };
-  }, [graph.nodes, graph.links]);
+  }, [graph.nodes, graph.links, directed, weighted]);
 
   const error = !parsed.ok ? parsed.error : null;
 
@@ -265,11 +356,82 @@ export default function GraphPlayground() {
             transition={{ duration: 0.2 }}
           >
             <div style={styles.label}>Adjacency List (JSON)</div>
+            <button
+              style={styles.button}
+              onClick={async () => {
+                const body = {
+                  config: {
+                    configType: "generator",
+                    version: "1",
+                    type: "graph",
+                    data: {
+                      id: "frontend-test", // any string for now
+                      directed,
+                      weighted,
+                      connected,
+                      cyclic,
+                    },
+                  },
+                  num_nodes: nodes,
+                  num_edges: edges,
+                };
+
+                try {
+                  const response = await api.post("/graph/generate", body);
+                  console.log(response.data);
+                  setText(JSON.stringify(response.data, null, 2));
+                } catch (error) {
+                  console.error("Error submitting graph data:", error);
+                }
+              }}
+            >
+              Get Graph
+            </button>
             <textarea
               style={styles.textarea}
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
+            <div>
+              <input
+                type="checkbox"
+                id="directed"
+                onChange={(e) => setDirected(e.target.checked)}
+              />
+              <label htmlFor="directed" style={{ marginLeft: 4, fontSize: 12 }}>
+                Directed
+              </label>
+              <input
+                type="checkbox"
+                id="weighted"
+                onChange={(e) => setWeighted(e.target.checked)}
+                style={{ marginLeft: 12 }}
+              />
+              <label htmlFor="weighted" style={{ marginLeft: 4, fontSize: 12 }}>
+                Weighted
+              </label>
+              <input
+                type="checkbox"
+                id="connected"
+                onChange={(e) => setConnected(e.target.checked)}
+                style={{ marginLeft: 12 }}
+              />
+              <label
+                htmlFor="connected"
+                style={{ marginLeft: 4, fontSize: 12 }}
+              >
+                Connected
+              </label>
+              <input
+                type="checkbox"
+                id="cyclic"
+                onChange={(e) => setCyclic(e.target.checked)}
+                style={{ marginLeft: 12 }}
+              />
+              <label htmlFor="cyclic" style={{ marginLeft: 4, fontSize: 12 }}>
+                Cyclic
+              </label>
+            </div>
             <div style={styles.hint}>
               Drag nodes inside the graph area. (D3 drag is attached to
               circles.)
@@ -279,10 +441,22 @@ export default function GraphPlayground() {
             ) : (
               <div style={styles.stats}>
                 <div>
-                  <b>Nodes:</b> {graph.nodes.length}
+                  <b>Nodes:</b>{" "}
+                  <input
+                    type="number"
+                    id="nodes"
+                    onChange={(e) => setNodes(parseInt(e.target.value, 10))}
+                    style={{ width: 60, marginLeft: 4 }}
+                  />
                 </div>
                 <div>
-                  <b>Edges:</b> {graph.links.length}
+                  <b>Edges:</b>{" "}
+                  <input
+                    type="number"
+                    id="edges"
+                    onChange={(e) => setEdges(parseInt(e.target.value, 10))}
+                    style={{ width: 60, marginLeft: 4 }}
+                  />
                 </div>
               </div>
             )}
